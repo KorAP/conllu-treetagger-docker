@@ -77,6 +77,9 @@ RUN sh install-tagger.sh
 # delete downloaded files
 RUN rm install-tagger.sh *.gz
 
+# skip tokenization and be quiet
+RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' /local/cmd/tree-tagger-*
+
 # final image
 FROM alpine:latest AS treetagger
 
