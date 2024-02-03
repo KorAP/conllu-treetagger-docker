@@ -1,8 +1,8 @@
 # temporary image
-FROM ubuntu:19.04 AS treetagger_builder
+FROM ubuntu:latest AS treetagger_builder
 
 # TreeTagger version
-ARG VERSION=3.2.2
+ARG VERSION=3.2.5
 
 # metadata
 LABEL maintainer="Stefan Fischer <sfischer13@ymail.com>"
@@ -75,10 +75,10 @@ RUN wget -q $DATA/spanish-chunker.par.gz
 RUN sh install-tagger.sh
 
 # delete downloaded files
-RUN rm install-tagger.sh *.gz 
+RUN rm install-tagger.sh *.gz
 
 # final image
-FROM alpine:3.10.1 AS treetagger
+FROM alpine:latest AS treetagger
 
 # install packages
 RUN apk add --no-cache --update \
@@ -99,6 +99,9 @@ RUN groupadd docker \
 
 # change owner
 RUN chown -R docker:docker /local/
+
+# make sure binaries are executable
+RUN chmod a+x /local/bin/*
 
 # default command
 COPY docker-entrypoint.sh /

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ $# -eq 0 ]; then
-	VERSION=3.2.2
+	VERSION=3.2.5
 elif [ $# -eq 1 ]; then
 	VERSION="$1"
 else
