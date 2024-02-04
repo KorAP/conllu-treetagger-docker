@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e -o pipefail
+set -o pipefail
 
 # Default values
 lang="german"
@@ -42,8 +42,12 @@ if [ $OPTIND -le $# ]; then
 fi
 
 if ! compgen -G  "/local/lib/${lang}*.par" > /dev/null; then
-    echo "No model found for language $lang" >&2;
-    exit 1
+    wget https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/${lang}.par.gz >&2 # -O /local/lib/${lang}.par.gz
+    bash install-tagger.sh > /dev/null
+    if ! compgen -G  "/local/lib/${lang}*.par" > /dev/null; then
+        echo "ERROR: Could not install model for language $lang, aborting." >&2;
+        exit 1
+    fi
 fi
 
 perl -wlnpe's/^(#.*|$)/<$1>/; s/^[\d.]+\t([^\t]*).*/$1/' |  exec "tree-tagger-$lang" | \
