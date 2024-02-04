@@ -75,7 +75,7 @@ RUN wget -q $DATA/spanish-chunker.par.gz
 RUN sh install-tagger.sh
 
 # delete downloaded files
-RUN rm install-tagger.sh *.gz
+RUN rm *.gz
 
 # skip tokenization and be quiet
 RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' /local/cmd/tree-tagger-*
@@ -109,7 +109,6 @@ RUN chmod a+x /local/bin/*
 # default command
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["--help"]
 
 # default working directory
 WORKDIR /local/
