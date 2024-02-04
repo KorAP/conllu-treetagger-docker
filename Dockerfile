@@ -5,7 +5,7 @@ FROM ubuntu:latest AS treetagger_builder
 ARG VERSION=3.2.5
 
 # metadata
-LABEL maintainer="Stefan Fischer <sfischer13@ymail.com>"
+LABEL maintainer="Marc Kupietz <kupietz@ids-mannheim.de>"
 
 # apt-get settings
 ARG DEBIAN_FRONTEND=noninteractive
