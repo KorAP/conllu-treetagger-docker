@@ -14,7 +14,8 @@ docker build \
 --pull \
 --rm \
 --target treetagger \
---tag sfischer13/treetagger:"$VERSION" \
+--tag korap/conllu2treetagger:latest \
+--tag korap/conllu2treetagger:"$VERSION" \
 --build-arg VERSION="$VERSION" \
 .
 
