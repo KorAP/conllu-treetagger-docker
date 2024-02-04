@@ -35,7 +35,7 @@ make build
 ### Running
 
 ``` shell
-korapxml2conllu ~/KoKoKom/kyc.zip  | docker run --rm -i korap/conllu2treetagger -l german
+korapxml2conllu goe.zip  | docker run --rm -i korap/conllu2treetagger -l german
 ```
 
 #### Miscellaneous commands
