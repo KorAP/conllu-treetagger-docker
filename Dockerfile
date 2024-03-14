@@ -45,11 +45,15 @@ RUN rm *.gz
 # skip tokenization and be quiet
 RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' /local/cmd/tree-tagger-*
 
+# run gawk as gawk
+RUN sed -i -e 's/awk/gawk/' /local/cmd/filter-*
+
 # final image
 FROM alpine:latest AS treetagger
 
 # install packages
 RUN apk add --no-cache --update \
+gawk \
 bash \
 perl \
 shadow \
