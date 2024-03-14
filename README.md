@@ -20,9 +20,15 @@ This image includes some recent parameter files available on the tagger's websit
 
 Texts in the following languages can be **tagged**: *Bulgarian, Catalan, Czech, Danish, Dutch, English, Estonian, Finnish, French, Galician, German, Middle High german, Greek, Ancient Greek, Ancient Greek (beta encoding), Italian, Korean, Latin, Norwegian (Bokmål), Polish, Portuguese, Portuguese (fine-grained tagset), Portuguese (alternative corpus), Romanian, Russian, Slovak, Slovenian, Spanish, Spanish (Ancora corpus), Swahili, Swedish*.
 
-## Usage
+## Installation
 
-### Building
+### Install docker image (from [internal gitlab artifacts](https://gitlab.ids-mannheim.de/ids-kl/kokokom/-/jobs/artifacts/main/browse?job=build-job))
+
+``` shell
+docker load < conllu2treetagger.xz
+```
+
+### Build from source
 
 In order to build the image, you have to clone the repository.
 
@@ -31,6 +37,8 @@ Then, build the Docker image.
 ``` shell
 make build
 ```
+
+## Usage
 
 ### Running
 
