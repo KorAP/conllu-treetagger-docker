@@ -45,8 +45,8 @@ RUN rm *.gz
 # skip tokenization and be quiet
 RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' /local/cmd/tree-tagger-*
 
-# run gawk as gawk
-RUN sed -i -e 's/awk/gawk/' /local/cmd/filter-*
+# replace awk/sed with perl
+COPY scripts/filter-german-tags.pl /local/cmd/filter-german-tags
 
 # final image
 FROM alpine:latest AS treetagger
