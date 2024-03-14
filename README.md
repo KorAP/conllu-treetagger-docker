@@ -22,10 +22,10 @@ Texts in the following languages can be **tagged**: *Bulgarian, Catalan, Czech, 
 
 ## Installation
 
-### Install docker image (from [internal gitlab artifacts](https://gitlab.ids-mannheim.de/ids-kl/kokokom/-/jobs/artifacts/main/browse?job=build-job))
+### Install docker image (from [internal gitlab artifacts](https://gitlab.ids-mannheim.de/KorAP/CoNLL-U-Treetagger/-/jobs/artifacts/master/browse?job=build-docker-image))
 
-``` shell
-docker load < conllu2treetagger.xz
+```shell
+curl -Ls 'https://gitlab.ids-mannheim.de/KorAP/CoNLL-U-Treetagger/-/jobs/artifacts/master/raw/conllu2treetagger.xz?job=build-docker-image' | docker load
 ```
 
 ### Build from source
