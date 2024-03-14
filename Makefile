@@ -4,4 +4,4 @@ clean:
 	scripts/clean.sh
 
 build:
-	scripts/build.sh ${VERSION}
+	scripts/build.sh

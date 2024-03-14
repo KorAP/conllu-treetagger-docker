@@ -8,6 +8,7 @@ else
 	echo "Wrong number of arguments!"
 	exit 1
 fi
+LOCAL_VERSION=1
 
 docker build \
 --no-cache \
@@ -15,7 +16,7 @@ docker build \
 --rm \
 --target treetagger \
 --tag korap/conllu2treetagger:latest \
---tag korap/conllu2treetagger:"$VERSION" \
+--tag korap/conllu2treetagger:"$VERSION-$LOCAL_VERSION" \
 --build-arg VERSION="$VERSION" \
 .
 
