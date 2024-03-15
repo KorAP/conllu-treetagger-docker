@@ -50,6 +50,6 @@ if ! compgen -G  "/local/lib/${lang}*.par" > /dev/null; then
     fi
 fi
 
-perl -wlnpe's/^(#.*|$)/<$1>/; s/^[\d.]+\t([^\t]*).*/$1/' |  exec "tree-tagger-$lang" | \
+perl -wlnpe'$_=substr($_, 0, 99000); s/^(#.*|$)/<$1>/; s/^[\d.]+\t([^\t]*).*/$1/' |  exec "tree-tagger-$lang" | \
  perl -wlne 's/^<(.*)>$/$1/; s/^(# *foundry *= *)base/$1 tt/; $id++; $id=0 if(/^(#|\s*$)/); my @cols = split("\t"); if(@cols > 2) { print "$id\t$cols[0]\t$cols[2]\t$cols[1]\t$cols[1]\t_\t_\t_\t_\t_"} else {print $_;}'
 
