@@ -1,0 +1,7 @@
+# foundry =  tree_tagger
+# filename = doc1
+meta
+2	1	der	_	DET	_	_	_	_	_
+3	2	Mann	_	NN|NE	_	_	_	_	0.9|0.1
+4	3	gehen	_	VERB	_	_	_	_	_
+5	.	.	_	$.	_	_	_	_	_

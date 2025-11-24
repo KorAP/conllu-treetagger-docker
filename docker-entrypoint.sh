@@ -53,6 +53,6 @@ if ! compgen -G  "/local/lib/${lang}*.par" > /dev/null; then
     fi
 fi
 
-perl -wlnpe'$_=substr($_, 0, 99000); s/^(#.*|$)/<$1>/; s/^[\d.]+\t([^\t]*).*/$1/' |  tree-tagger-$lang $PROB | \
- perl -wlne 's/^<(.*)>$/$1/; s/^(# *foundry *= *)base/$1 tree_tagger/; $id++; $id=0 if(/^(#|\s*$)/); my @cols = split("\t"); if(@cols == 3) { print "$id\t$cols[0]\t$cols[2]\t_\t$cols[1]\t_\t_\t_\t_\t_"} elsif (@cols > 3) { my $extra = join(" ", @cols[3..$#cols]); $extra =~ s/^[fsc]\s+//; my @tags; my @probs; my @probs_cols = split(/\s+/, $extra); for (my $i=0; $i < @probs_cols; $i+=2) { push @tags, $probs_cols[$i]; push @probs, $probs_cols[$i+1]; }; my $xpos = join("|", @tags); my $misc = (scalar(@tags) == 1) ? "_" : join("|", @probs); print "$id\t$cols[0]\t$cols[2]\t_\t$xpos\t_\t_\t_\t_\t$misc" } else {print $_;}'
+korap-treetagger-processor preprocess |  tree-tagger-$lang $PROB | \
+ korap-treetagger-processor postprocess
 

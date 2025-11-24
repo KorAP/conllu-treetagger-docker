@@ -47,7 +47,16 @@ RUN rm *.gz
 RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' -e 's/$TAGGER $OPTIONS $PARFILE/$TAGGER $OPTIONS $PARFILE $*/' /local/cmd/tree-tagger-*
 
 # replace awk/sed with perl
-COPY scripts/filter-german-tags.pl /local/cmd/filter-german-tags
+# COPY scripts/filter-german-tags.pl /local/cmd/filter-german-tags
+RUN ln -s /local/bin/korap-treetagger-processor /local/cmd/filter-german-tags
+RUN ln -s /local/bin/korap-treetagger-processor /local/cmd/filter-german-tags
+
+# rust builder
+FROM rust:1.75-alpine3.19 AS rust_builder
+WORKDIR /usr/src/app
+RUN apk add --no-cache musl-dev
+COPY korap-treetagger-processor .
+RUN cargo build --release
 
 # final image
 FROM alpine:3.19 AS treetagger
@@ -62,6 +71,7 @@ shadow \
 
 # copy tagger from previous stage
 COPY --from=treetagger_builder /local/ /local/
+COPY --from=rust_builder /usr/src/app/target/release/korap-treetagger-processor /local/bin/korap-treetagger-processor
 
 # set path
 ENV PATH /local/bin:/local/cmd:$PATH

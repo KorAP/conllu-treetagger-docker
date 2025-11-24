@@ -1,0 +1,7 @@
+# foundry = base
+# filename = doc1
+<meta>
+1	DET	der
+2	NOUN	Mann	NN 0.9 NE 0.1
+3	VERB	gehen
+.	$.	.

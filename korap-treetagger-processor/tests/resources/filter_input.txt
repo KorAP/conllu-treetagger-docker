@@ -1,0 +1,9 @@
+word	V.FIN	lemma
+word	$.	lemma
+gehen	VVFIN	gehen
+.	$.	.
+machen	VVFIN	machen
+,	$,	,
+laufen	VVFIN	laufen
+und	KON	und
+sagen	VVFIN	sagen
