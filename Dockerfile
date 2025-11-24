@@ -1,5 +1,5 @@
 # temporary image
-FROM ubuntu:latest AS treetagger_builder
+FROM ubuntu:22.04 AS treetagger_builder
 
 # TreeTagger version
 ARG VERSION=3.2.5
@@ -50,7 +50,7 @@ RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' -e 's/
 COPY scripts/filter-german-tags.pl /local/cmd/filter-german-tags
 
 # final image
-FROM alpine:latest AS treetagger
+FROM alpine:3.19 AS treetagger
 
 # install packages
 RUN apk add --no-cache --update \
