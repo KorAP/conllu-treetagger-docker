@@ -52,7 +52,7 @@ RUN ln -s /local/bin/korap-treetagger-processor /local/cmd/filter-german-tags
 RUN ln -s /local/bin/korap-treetagger-processor /local/cmd/filter-german-tags
 
 # rust builder
-FROM rust:1.75-alpine3.19 AS rust_builder
+FROM rust:1.79-alpine3.20 AS rust_builder
 WORKDIR /usr/src/app
 RUN apk add --no-cache musl-dev
 COPY korap-treetagger-processor .
