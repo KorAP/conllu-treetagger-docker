@@ -43,7 +43,8 @@ RUN sh install-tagger.sh
 RUN rm *.gz
 
 # skip tokenization and be quiet
-RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' /local/cmd/tree-tagger-*
+# RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet -proto-with-prob /' -e 's/^$TOKENIZER.*/cat |/' /local/cmd/tree-tagger-*
+RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' -e 's/$TAGGER $OPTIONS $PARFILE/$TAGGER $OPTIONS $PARFILE $*/' /local/cmd/tree-tagger-*
 
 # replace awk/sed with perl
 COPY scripts/filter-german-tags.pl /local/cmd/filter-german-tags

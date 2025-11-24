@@ -7,10 +7,15 @@ $_     = &Getline0();
 $word  = $Fld1;
 $tag   = $Fld2;
 $lemma = $Fld3;
+$rest  = $FldRest;
 
 while (<>) {
   chomp;    # strip record separator
-  ( $Fld1, $Fld2, $Fld3 ) = split( $FS, $_, -1 );
+  my @f = split( $FS, $_, -1 );
+  $Fld1 = $f[0];
+  $Fld2 = $f[1];
+  $Fld3 = $f[2];
+  $FldRest = (@f > 3) ? join("\t", @f[3..$#f]) : undef;
   if (
     (
          ( $tag =~ 'V.FIN' || $tag =~ 'V.INF' )
@@ -51,30 +56,35 @@ while (<>) {
   }
 
   if ($lemma) {
-    print $word, $tag, $lemma;
+    print $word, $tag, $lemma, (defined $rest ? $rest : ());
   } elsif ($tag) {
-    print $word, $tag;
+    print $word, $tag, (defined $rest ? $rest : ());
   } else {
-    print $word;
+    print $word, (defined $rest ? $rest : ());
   }
 
   $word  = $Fld1;
   $tag   = $Fld2;
   $lemma = $Fld3;
+  $rest  = $FldRest;
 }
 
 if ($lemma) {
-  print $word, $tag, $lemma;
+  print $word, $tag, $lemma, (defined $rest ? $rest : ());
 } elsif ($tag) {
-  print $word, $tag;
+  print $word, $tag, (defined $rest ? $rest : ());
 } else {
-  print $word;
+  print $word, (defined $rest ? $rest : ());
 }
 
 sub Getline0 {
   if ( $getline_ok = ( ( $_ = <> ) ne '' ) ) {
     chomp;    # strip record separator
-    ( $Fld1, $Fld2, $Fld3 ) = split( $FS, $_, -1 );
+    my @f = split( $FS, $_, -1 );
+    $Fld1 = $f[0];
+    $Fld2 = $f[1];
+    $Fld3 = $f[2];
+    $FldRest = (@f > 3) ? join("\t", @f[3..$#f]) : undef;
   }
   $_;
 }
