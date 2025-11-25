@@ -41,7 +41,7 @@ make build-docker
 
 ### Running
 
-Note: `korapxml2conllu` (used in the running examples) can be downloaded from [https://github.com/KorAP/korapxmltool](https://github.com/KorAP/korapxmltool).
+Note: `korapxml2conllu` (used in the examples here) can be downloaded from [https://github.com/KorAP/korapxmltool](https://github.com/KorAP/korapxmltool).
 
 ``` shell
 korapxml2conllu goe.zip | docker run --rm -i korap/conllu-treetagger -l german
@@ -59,6 +59,12 @@ To avoid downloading the language model on every run, you can mount a local dire
 
 ``` shell
 korapxml2conllu goe.zip | docker run --rm -i -v /path/to/local/models:/local/models korap/conllu-treetagger -l german
+```
+
+#### Generate a tree-tagged KorAP XML zip directly
+
+``` shell
+korapxmltool -A "docker run --rm -i korap/conllu-treetagger" -t zip t24.zip
 ```
 
 #### Miscellaneous commands
