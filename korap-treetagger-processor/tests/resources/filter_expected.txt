@@ -1,5 +1,7 @@
+# This is a comment
 word	V.FIN	lemma
 word	$.	lemma
+
 gehen	VVFIN	gehen
 .	$.	.
 machen	VVFIN	machen

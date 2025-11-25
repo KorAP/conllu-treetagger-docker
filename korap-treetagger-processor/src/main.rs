@@ -180,17 +180,22 @@ struct Token {
     rest: Option<String>,
 }
 
-fn parse_line(line: &str) -> Option<Token> {
+enum Line {
+    Token(Token),
+    Raw(String),
+}
+
+fn parse_line(line: &str) -> Line {
     let parts: Vec<&str> = line.split('\t').collect();
     if parts.len() >= 3 {
-        Some(Token {
+        Line::Token(Token {
             word: parts[0].to_string(),
             tag: parts[1].to_string(),
             lemma: parts[2].to_string(),
             rest: if parts.len() > 3 { Some(parts[3..].join("\t")) } else { None },
         })
     } else {
-        None
+        Line::Raw(line.to_string())
     }
 }
 
@@ -200,7 +205,7 @@ fn filter_german() -> anyhow::Result<()> {
     let mut handle = stdin.lock();
     let mut buffer = String::new();
 
-    let mut current_token: Option<Token> = None;
+    let mut current_line: Option<Line> = None;
     let mut flag = false;
     let mut zu = false;
 
@@ -212,72 +217,85 @@ fn filter_german() -> anyhow::Result<()> {
     let re_zu = regex::Regex::new(r".zu.....").unwrap();
     let re_vvam_fin = regex::Regex::new(r"^V[VAM]FIN$").unwrap();
 
-    // Read first line to populate current_token (lookahead is actually the *next* line in the loop)
+    // Read first line to populate current_line
     if handle.read_line(&mut buffer)? > 0 {
         let line = buffer.trim_end();
-        current_token = parse_line(line);
+        current_line = Some(parse_line(line));
         buffer.clear();
     }
 
     while handle.read_line(&mut buffer)? > 0 {
         let line = buffer.trim_end();
-        let next_token = parse_line(line);
+        let next_line = parse_line(line);
 
-        if let Some(ref mut curr) = current_token {
+        if let Some(curr) = current_line {
+            match curr {
+                Line::Token(mut token) => {
+                     let tag_matches = re_v_fin_inf.is_match(&token.tag);
+                     let next_is_punct = if let Line::Token(ref next_token) = next_line {
+                         re_punct.is_match(&next_token.tag)
+                     } else {
+                         false
+                     };
+                     
+                     let word_matches = re_word_en.is_match(&token.word) && !re_word_eten.is_match(&token.word) && !re_zu.is_match(&token.word);
 
-             let tag_matches = re_v_fin_inf.is_match(&curr.tag);
-             let next_is_punct = if let Some(ref next) = next_token {
-                 re_punct.is_match(&next.tag)
-             } else {
-                 false
-             };
-             
-             let word_matches = re_word_en.is_match(&curr.word) && !re_word_eten.is_match(&curr.word) && !re_zu.is_match(&curr.word);
+                     if tag_matches && next_is_punct && word_matches {
+                         if flag || zu {
+                             if token.tag == "VVFIN" { token.tag = "VVINF".to_string(); }
+                             else if token.tag == "VAFIN" { token.tag = "VAINF".to_string(); }
+                             else if token.tag == "VMFIN" { token.tag = "VMINF".to_string(); }
+                         } else {
+                             if token.tag == "VVINF" { token.tag = "VVFIN".to_string(); }
+                             else if token.tag == "VAINF" { token.tag = "VAFIN".to_string(); }
+                             else if token.tag == "VMINF" { token.tag = "VMFIN".to_string(); }
+                         }
+                     }
 
-             if tag_matches && next_is_punct && word_matches {
-                 if flag || zu {
-                     if curr.tag == "VVFIN" { curr.tag = "VVINF".to_string(); }
-                     else if curr.tag == "VAFIN" { curr.tag = "VAINF".to_string(); }
-                     else if curr.tag == "VMFIN" { curr.tag = "VMINF".to_string(); }
-                 } else {
-                     if curr.tag == "VVINF" { curr.tag = "VVFIN".to_string(); }
-                     else if curr.tag == "VAINF" { curr.tag = "VAFIN".to_string(); }
-                     else if curr.tag == "VMINF" { curr.tag = "VMFIN".to_string(); }
-                 }
-             }
+                     // Update state
+                     if re_vvam_fin.is_match(&token.tag) {
+                         flag = true;
+                     }
+                     if re_punct.is_match(&token.tag) {
+                         flag = false;
+                     }
+                     if token.tag == "PTKZU" {
+                         zu = true;
+                     } else {
+                         zu = false;
+                     }
 
-             // Update state
-             if re_vvam_fin.is_match(&curr.tag) {
-                 flag = true;
-             }
-             if re_punct.is_match(&curr.tag) {
-                 flag = false;
-             }
-             if curr.tag == "PTKZU" {
-                 zu = true;
-             } else {
-                 zu = false;
-             }
-
-             // Print current
-             if let Some(ref rest) = curr.rest {
-                 writeln!(stdout, "{}\t{}\t{}\t{}", curr.word, curr.tag, curr.lemma, rest)?;
-             } else {
-                 writeln!(stdout, "{}\t{}\t{}", curr.word, curr.tag, curr.lemma)?;
-             }
+                     // Print current
+                     if let Some(ref rest) = token.rest {
+                         writeln!(stdout, "{}\t{}\t{}\t{}", token.word, token.tag, token.lemma, rest)?;
+                     } else {
+                         writeln!(stdout, "{}\t{}\t{}", token.word, token.tag, token.lemma)?;
+                     }
+                },
+                Line::Raw(content) => {
+                    writeln!(stdout, "{}", content)?;
+                }
+            }
         }
 
-        current_token = next_token;
+        current_line = Some(next_line);
         buffer.clear();
     }
 
-    // Process last token
-    if let Some(ref mut curr) = current_token {
-         if let Some(ref rest) = curr.rest {
-             writeln!(stdout, "{}\t{}\t{}\t{}", curr.word, curr.tag, curr.lemma, rest)?;
-         } else {
-             writeln!(stdout, "{}\t{}\t{}", curr.word, curr.tag, curr.lemma)?;
-         }
+    // Process last line
+    if let Some(curr) = current_line {
+        match curr {
+            Line::Token(token) => {
+                 if let Some(ref rest) = token.rest {
+                     writeln!(stdout, "{}\t{}\t{}\t{}", token.word, token.tag, token.lemma, rest)?;
+                 } else {
+                     writeln!(stdout, "{}\t{}\t{}", token.word, token.tag, token.lemma)?;
+                 }
+            },
+            Line::Raw(content) => {
+                writeln!(stdout, "{}", content)?;
+            }
+        }
     }
 
     Ok(())

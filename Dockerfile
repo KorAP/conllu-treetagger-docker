@@ -48,8 +48,9 @@ RUN sed -i -e 's/OPTIONS="/OPTIONS="-quiet /' -e 's/^$TOKENIZER.*/cat |/' -e 's/
 
 # replace awk/sed with perl
 # COPY scripts/filter-german-tags.pl /local/cmd/filter-german-tags
-RUN ln -s /local/bin/korap-treetagger-processor /local/cmd/filter-german-tags
-RUN ln -s /local/bin/korap-treetagger-processor /local/cmd/filter-german-tags
+RUN echo '#!/bin/sh' > /local/cmd/filter-german-tags && \
+    echo 'exec /local/bin/korap-treetagger-processor filter-german "$@"' >> /local/cmd/filter-german-tags && \
+    chmod +x /local/cmd/filter-german-tags
 
 # rust builder
 FROM rust:1.79-alpine3.20 AS rust_builder
@@ -74,7 +75,7 @@ COPY --from=treetagger_builder /local/ /local/
 COPY --from=rust_builder /usr/src/app/target/release/korap-treetagger-processor /local/bin/korap-treetagger-processor
 
 # set path
-ENV PATH /local/bin:/local/cmd:$PATH
+ENV PATH=/local/bin:/local/cmd:$PATH
 
 # add non-root user
 RUN groupadd docker \
