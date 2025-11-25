@@ -31,6 +31,7 @@ ARG DATA=https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data
 RUN wget -q $DATA/tree-tagger-linux-$VERSION.tar.gz
 RUN wget -q $DATA/tagger-scripts.tar.gz
 RUN wget -q $DATA/install-tagger.sh
+RUN sed -i 's/mkdir /mkdir -p /g' install-tagger.sh
 
 # download parameter files
 RUN wget -q $DATA/english.par.gz
