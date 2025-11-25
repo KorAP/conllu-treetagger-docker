@@ -27,8 +27,9 @@ fn main() -> anyhow::Result<()> {
 
 fn preprocess() -> anyhow::Result<()> {
     let stdin = io::stdin();
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
     let mut handle = stdin.lock();
+    let mut writer = io::BufWriter::new(stdout.lock());
     let mut buffer = String::new();
 
     while handle.read_line(&mut buffer)? > 0 {
@@ -39,7 +40,7 @@ fn preprocess() -> anyhow::Result<()> {
             line = &line[..99000];
         }
         
-        let trimmed = line.trim_end(); // Handle potential newline issues if we sliced it off? 
+        let _trimmed = line.trim_end(); // Handle potential newline issues if we sliced it off? 
         // Actually perl substr keeps the newline if it's within the limit, or cuts it off.
         // But the regexes work on the string.
         
@@ -82,7 +83,7 @@ fn preprocess() -> anyhow::Result<()> {
              }
         }
 
-        writeln!(stdout, "{}", content)?;
+        writeln!(writer, "{}", content)?;
         buffer.clear();
     }
     Ok(())
@@ -90,8 +91,9 @@ fn preprocess() -> anyhow::Result<()> {
 
 fn postprocess() -> anyhow::Result<()> {
     let stdin = io::stdin();
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
     let mut handle = stdin.lock();
+    let mut writer = io::BufWriter::new(stdout.lock());
     let mut buffer = String::new();
     
     let mut id = 0;
@@ -125,7 +127,7 @@ fn postprocess() -> anyhow::Result<()> {
 
         if cols.len() == 3 {
              // print "$id\t$cols[0]\t$cols[2]\t_\t$cols[1]\t_\t_\t_\t_\t_"
-             writeln!(stdout, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t_", id, cols[0], cols[2], cols[1])?;
+             writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t_", id, cols[0], cols[2], cols[1])?;
         } else if cols.len() > 3 {
             // my $extra = join(" ", @cols[3..$#cols]);
             let extra_parts = &cols[3..];
@@ -162,10 +164,10 @@ fn postprocess() -> anyhow::Result<()> {
             };
 
             // print "$id\t$cols[0]\t$cols[2]\t_\t$xpos\t_\t_\t_\t_\t$misc"
-            writeln!(stdout, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t{}", id, cols[0], cols[2], xpos, misc)?;
+            writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t{}", id, cols[0], cols[2], xpos, misc)?;
 
         } else {
-            writeln!(stdout, "{}", line)?;
+            writeln!(writer, "{}", line)?;
         }
 
         buffer.clear();
@@ -201,8 +203,9 @@ fn parse_line(line: &str) -> Line {
 
 fn filter_german() -> anyhow::Result<()> {
     let stdin = io::stdin();
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
     let mut handle = stdin.lock();
+    let mut writer = io::BufWriter::new(stdout.lock());
     let mut buffer = String::new();
 
     let mut current_line: Option<Line> = None;
@@ -267,13 +270,13 @@ fn filter_german() -> anyhow::Result<()> {
 
                      // Print current
                      if let Some(ref rest) = token.rest {
-                         writeln!(stdout, "{}\t{}\t{}\t{}", token.word, token.tag, token.lemma, rest)?;
+                         writeln!(writer, "{}\t{}\t{}\t{}", token.word, token.tag, token.lemma, rest)?;
                      } else {
-                         writeln!(stdout, "{}\t{}\t{}", token.word, token.tag, token.lemma)?;
+                         writeln!(writer, "{}\t{}\t{}", token.word, token.tag, token.lemma)?;
                      }
                 },
                 Line::Raw(content) => {
-                    writeln!(stdout, "{}", content)?;
+                    writeln!(writer, "{}", content)?;
                 }
             }
         }
@@ -287,13 +290,13 @@ fn filter_german() -> anyhow::Result<()> {
         match curr {
             Line::Token(token) => {
                  if let Some(ref rest) = token.rest {
-                     writeln!(stdout, "{}\t{}\t{}\t{}", token.word, token.tag, token.lemma, rest)?;
+                     writeln!(writer, "{}\t{}\t{}\t{}", token.word, token.tag, token.lemma, rest)?;
                  } else {
-                     writeln!(stdout, "{}\t{}\t{}", token.word, token.tag, token.lemma)?;
+                     writeln!(writer, "{}\t{}\t{}", token.word, token.tag, token.lemma)?;
                  }
             },
             Line::Raw(content) => {
-                writeln!(stdout, "{}", content)?;
+                writeln!(writer, "{}", content)?;
             }
         }
     }
