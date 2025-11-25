@@ -1,8 +1,16 @@
+stages:
+  - build
+  - deploy
+
 build-docker-image:
-  image: docker:26.1.3
+  image: docker:latest
   stage: build
+  variables:
+    FF_NETWORK_PER_BUILD: "true"
   services:
-    - docker:26.1.3-dind
+    - name: docker:dind
+      alias: docker
+      command: ["--dns=127.0.0.11", "--dns=8.8.8.8"]
   rules:
     - if: $CI_COMMIT_TAG =~ /.+/
       variables:
@@ -25,3 +33,23 @@ build-docker-image:
   artifacts:
     paths:
       - conllu-treetagger.xz
+
+deploy-to-docker-hub:
+  image: docker:latest
+  stage: deploy
+  variables:
+    FF_NETWORK_PER_BUILD: "true"
+  services:
+    - name: docker:dind
+      alias: docker
+      command: ["--dns=127.0.0.11", "--dns=8.8.8.8"]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /.+/
+    - when: manual
+  dependencies:
+    - build-docker-image
+  before_script:
+    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER" --password-stdin
+  script:
+    - xz -d -c conllu-treetagger.xz | docker load
+    - docker push --all-tags korap/conllu-treetagger
