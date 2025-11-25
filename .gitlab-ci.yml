@@ -12,7 +12,7 @@ build-docker-image:
         VID_ALT: $CI_COMMIT_BRANCH-$CI_COMMIT_SHORT_SHA
         VID: snapshot
   cache:
-    key: conllu2treetagger 
+    key: conllu-treetagger 
     paths:
       - cache/
   before_script:
@@ -20,8 +20,8 @@ build-docker-image:
     - apk update
     - apk add --no-cache bash make xz
   script:
-    - make build
-    - docker save korap/conllu2treetagger | xz -T0 > conllu2treetagger.xz
+    - make build-docker
+    - docker save korap/conllu-treetagger | xz -T0 > conllu-treetagger.xz
   artifacts:
     paths:
-      - conllu2treetagger.xz
+      - conllu-treetagger.xz

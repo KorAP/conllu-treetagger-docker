@@ -15,8 +15,8 @@ docker build \
 --pull \
 --rm \
 --target treetagger \
---tag korap/conllu2treetagger:latest \
---tag korap/conllu2treetagger:"$VERSION-$LOCAL_VERSION" \
+--tag korap/conllu-treetagger:latest \
+--tag korap/conllu-treetagger:"$VERSION-$LOCAL_VERSION" \
 --build-arg VERSION="$VERSION" \
 .
 

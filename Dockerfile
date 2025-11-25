@@ -34,8 +34,8 @@ RUN wget -q $DATA/install-tagger.sh
 RUN sed -i 's/mkdir /mkdir -p /g' install-tagger.sh
 
 # download parameter files
-RUN wget -q $DATA/english.par.gz
-RUN wget -q $DATA/german.par.gz
+# RUN wget -q $DATA/english.par.gz
+# RUN wget -q $DATA/german.par.gz
 
 # install tagger and parameter files
 RUN sh install-tagger.sh

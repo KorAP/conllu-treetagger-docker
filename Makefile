@@ -1,7 +1,8 @@
-.PHONY: clean build
+.PHONY: clean build-docker
+
+build-docker:
+	scripts/build.sh
 
 clean:
-	scripts/clean.sh
+	docker images --quiet --filter=reference="korap/conllu-treetagger:*" | xargs -r docker rmi --force
 
-build:
-	scripts/build.sh
