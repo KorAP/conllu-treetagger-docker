@@ -140,21 +140,63 @@ fn postprocess() -> anyhow::Result<()> {
 
             // my @tags; my @probs; my @probs_cols = split(/\s+/, $extra);
             let probs_cols: Vec<&str> = extra.split_whitespace().collect();
-            let mut tags = Vec::new();
-            let mut probs = Vec::new();
+
+            // Parse lemmas
+            let lemmas: Vec<&str> = cols[2].split('|').collect();
 
             // for (my $i=0; $i < @probs_cols; $i+=2)
-            for chunk in probs_cols.chunks(2) {
-                if chunk.len() >= 1 {
-                    tags.push(chunk[0]);
-                }
+            struct TagLemmaProb<'a> {
+                tag: &'a str,
+                lemma: &'a str,
+                prob_str: &'a str,
+                prob_val: f64,
+            }
+
+            let mut triples: Vec<TagLemmaProb> = Vec::new();
+
+            for (i, chunk) in probs_cols.chunks(2).enumerate() {
+                let lemma = if i < lemmas.len() { lemmas[i] } else { lemmas.last().unwrap_or(&"") };
+                
                 if chunk.len() >= 2 {
-                    probs.push(chunk[1]);
+                    let p_val = chunk[1].parse::<f64>().unwrap_or(0.0);
+                    triples.push(TagLemmaProb {
+                        tag: chunk[0],
+                        lemma,
+                        prob_str: chunk[1],
+                        prob_val: p_val,
+                    });
+                } else if chunk.len() == 1 {
+                    triples.push(TagLemmaProb {
+                        tag: chunk[0],
+                        lemma,
+                        prob_str: "0.0",
+                        prob_val: 0.0,
+                    });
                 }
             }
 
+            // Sort descending by prob_val
+            triples.sort_by(|a, b| b.prob_val.partial_cmp(&a.prob_val).unwrap_or(std::cmp::Ordering::Equal));
+
+            let tags: Vec<&str> = triples.iter().map(|t| t.tag).collect();
+            let lemmas_sorted: Vec<&str> = triples.iter().map(|t| t.lemma).collect();
+            let probs: Vec<&str> = triples.iter().map(|t| t.prob_str).collect();
+
             // my $xpos = join("|", @tags);
             let xpos = tags.join("|");
+            
+            // Deduplicate lemmas if all are the same
+            let unique_lemmas: Vec<&str> = lemmas_sorted.iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
+            
+            let lemma_str = if unique_lemmas.len() == 1 {
+                unique_lemmas[0].to_string()
+            } else {
+                lemmas_sorted.join("|")
+            };
             
             // my $misc = (scalar(@tags) == 1) ? "_" : join("|", @probs);
             let misc = if tags.len() == 1 {
@@ -164,7 +206,7 @@ fn postprocess() -> anyhow::Result<()> {
             };
 
             // print "$id\t$cols[0]\t$cols[2]\t_\t$xpos\t_\t_\t_\t_\t$misc"
-            writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t{}", id, cols[0], cols[2], xpos, misc)?;
+            writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t{}", id, cols[0], lemma_str, xpos, misc)?;
 
         } else {
             writeln!(writer, "{}", line)?;
