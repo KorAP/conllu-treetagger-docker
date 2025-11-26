@@ -1,6 +1,27 @@
 stages:
+  - test
   - build
   - deploy
+
+test-rust-processor:
+  image: rust:1.79-alpine3.20
+  stage: test
+  before_script:
+    - apk add --no-cache musl-dev
+  script:
+    - cd korap-treetagger-processor
+    - cargo test --release
+    - cargo build --release
+    # Run our custom tests
+    - cat tests/resources/sort_input.txt | ./target/release/korap-treetagger-processor postprocess > tests/resources/sort_actual.txt
+    - diff tests/resources/sort_expected.txt tests/resources/sort_actual.txt
+    - cat tests/resources/lemma_dedup_input.txt | ./target/release/korap-treetagger-processor postprocess > tests/resources/lemma_dedup_actual.txt
+    - diff tests/resources/lemma_dedup_expected.txt tests/resources/lemma_dedup_actual.txt
+  cache:
+    key: rust-cargo
+    paths:
+      - korap-treetagger-processor/target/
+      - .cargo/
 
 build-docker-image:
   image: docker:latest

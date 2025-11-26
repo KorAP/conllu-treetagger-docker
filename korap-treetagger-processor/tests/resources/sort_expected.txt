@@ -1,0 +1,2 @@
+1	word	lemma	_	tag1|tag2	_	_	_	_	0.9|0.1
+2	word2	lemma	_	tagB|tagA|tagC	_	_	_	_	0.8|0.2|0.0
