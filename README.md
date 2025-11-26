@@ -2,7 +2,7 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/korap/conllu-treetagger.svg)](https://hub.docker.com/r/korap/conllu-treetagger)
 [![Docker Stars](https://img.shields.io/docker/stars/korap/conllu-treetagger.svg)](https://hub.docker.com/r/korap/conllu-treetagger)
-[![CI](https://github.com/KorAP/CoNLL-U-Treetagger/actions/workflows/ci.yml/badge.svg)](https://github.com/KorAP/CoNLL-U-Treetagger/actions/workflows/ci.yml)
+[![CI](https://github.com/KorAP/conllu-treetagger-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/KorAP/conllu-treetagger-docker/actions/workflows/ci.yml)
 
 Docker image for **Helmut Schmid**'s [TreeTagger](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/) (based on [Stefan Fischer](https://github.com/sfischer13)'s [docker-treetagger](https://github.com/sfischer13/docker-treetagger)) with support for input and output in [CoNLL-U format](https://universaldependencies.org/format.html).
 
