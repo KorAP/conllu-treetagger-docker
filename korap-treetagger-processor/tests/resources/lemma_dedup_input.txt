@@ -1,2 +1,2 @@
-das	ART	die|die|die	f ART 0.720 PDS 0.175 PRELS 0.105
-word	TAG	lemma1|lemma2|lemma1	f TAG1 0.5 TAG2 0.3 TAG3 0.2
+das	ART die 0.720	PDS die 0.175	PRELS die 0.105
+word	TAG1 lemma1 0.5	TAG2 lemma2 0.3	TAG3 lemma1 0.2
