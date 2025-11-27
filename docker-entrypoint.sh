@@ -4,17 +4,20 @@ set -o pipefail
 
 # Default values
 lang="german"
+threshold="0.1"
 
 usage() {
-    echo "Usage: $0 [-h] [-l LANG] [-L]"
+    echo "Usage: $0 [-h] [-l LANG] [-L] [-p] [-t THRESHOLD]"
     echo "  -h            Display this help message"
     echo "  -l LANG       Specify a language (default: $lang)"
     echo "  -L            List available languages/models"
+    echo "  -p            Output probabilities for different interpretations"
+    echo "  -t THRESHOLD  Set probability threshold (default: $threshold, requires -p)"
     exit 1
 }
 
 # Parse command line options
-while getopts "hl:Lp" opt; do
+while getopts "hl:Lpt:" opt; do
     case $opt in
         h)
             usage
@@ -27,7 +30,10 @@ while getopts "hl:Lp" opt; do
             exit 0
             ;;
         p)
-            PROB="-proto-with-prob"
+            USE_PROB=1
+            ;;
+        t)
+            threshold="$OPTARG"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -39,6 +45,11 @@ while getopts "hl:Lp" opt; do
             ;;
     esac
 done
+
+# Set PROB variable if -p was specified
+if [ -n "$USE_PROB" ]; then
+    PROB="-threshold $threshold -prob"
+fi
 
 if [ $OPTIND -le $# ]; then
     usage

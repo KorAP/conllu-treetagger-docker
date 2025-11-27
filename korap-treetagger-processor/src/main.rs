@@ -108,10 +108,6 @@ fn postprocess() -> anyhow::Result<()> {
 
         // s/^(# *foundry *= *)base/$1 tree_tagger/
         if line.starts_with("#") && line.contains("foundry") && line.contains("base") {
-             // Simple replacement for now, regex if needed
-             // Perl: s/^(# *foundry *= *)base/$1 tree_tagger/
-             // This keeps the prefix and changes base to tree_tagger
-             // We can use regex for this to be safe
              let re = regex::Regex::new(r"^(# *foundry *= *)base").unwrap();
              line = re.replace(&line, "${1}tree_tagger").to_string();
         }
@@ -122,92 +118,93 @@ fn postprocess() -> anyhow::Result<()> {
             id = 0;
         }
 
-        // my @cols = split("\t");
+        // Split by tabs
         let cols: Vec<&str> = line.split('\t').collect();
 
-        if cols.len() == 3 {
-             // print "$id\t$cols[0]\t$cols[2]\t_\t$cols[1]\t_\t_\t_\t_\t_"
+        // Check if this is the new format with probabilities
+        // New format: columns after the first contain spaces (e.g., "TAG lemma prob")
+        // Old format: columns are just single values without spaces
+        let has_prob_format = cols.len() >= 2 && cols[1..].iter().any(|col| col.contains(' '));
+
+        if !has_prob_format && cols.len() == 3 {
+            // Handle simple 3-column format (word, tag, lemma) - no probabilities
              writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t_", id, cols[0], cols[2], cols[1])?;
-        } else if cols.len() > 3 {
-            // my $extra = join(" ", @cols[3..$#cols]);
-            let extra_parts = &cols[3..];
-            let mut extra = extra_parts.join(" ");
-            
-            // $extra =~ s/^[fsc]\s+//;
-            if extra.starts_with("f ") || extra.starts_with("s ") || extra.starts_with("c ") {
-                extra = extra[2..].to_string();
-            }
-
-            // my @tags; my @probs; my @probs_cols = split(/\s+/, $extra);
-            let probs_cols: Vec<&str> = extra.split_whitespace().collect();
-
-            // Parse lemmas
-            let lemmas: Vec<&str> = cols[2].split('|').collect();
-
-            // for (my $i=0; $i < @probs_cols; $i+=2)
-            struct TagLemmaProb<'a> {
-                tag: &'a str,
-                lemma: &'a str,
-                prob_str: &'a str,
+        } 
+        else if has_prob_format {
+            // Handle new format: word \t TAG1 lemma1 prob1 \t TAG2 lemma2 prob2 \t ...
+            struct TagLemmaProb {
+                tag: String,
+                lemma: String,
+                prob_str: String,
                 prob_val: f64,
             }
 
             let mut triples: Vec<TagLemmaProb> = Vec::new();
 
-            for (i, chunk) in probs_cols.chunks(2).enumerate() {
-                let lemma = if i < lemmas.len() { lemmas[i] } else { lemmas.last().unwrap_or(&"") };
+            // First column is the word, remaining columns are "TAG lemma prob" triplets
+            for col in &cols[1..] {
+                let parts: Vec<&str> = col.split_whitespace().collect();
                 
-                if chunk.len() >= 2 {
-                    let p_val = chunk[1].parse::<f64>().unwrap_or(0.0);
+                if parts.len() >= 3 {
+                    // Format: TAG lemma prob
+                    let tag = parts[0];
+                    let lemma = parts[1];
+                    let prob_str = parts[2];
+                    let prob_val = prob_str.parse::<f64>().unwrap_or(0.0);
+                    
                     triples.push(TagLemmaProb {
-                        tag: chunk[0],
-                        lemma,
-                        prob_str: chunk[1],
-                        prob_val: p_val,
+                        tag: tag.to_string(),
+                        lemma: lemma.to_string(),
+                        prob_str: prob_str.to_string(),
+                        prob_val,
                     });
-                } else if chunk.len() == 1 {
+                } else if parts.len() == 2 {
+                    // Fallback: TAG lemma (no prob)
+                    let tag = parts[0];
+                    let lemma = parts[1];
+                    
                     triples.push(TagLemmaProb {
-                        tag: chunk[0],
-                        lemma,
-                        prob_str: "0.0",
-                        prob_val: 0.0,
+                        tag: tag.to_string(),
+                        lemma: lemma.to_string(),
+                        prob_str: "1.0".to_string(),
+                        prob_val: 1.0,
                     });
                 }
             }
 
-            // Sort descending by prob_val
-            triples.sort_by(|a, b| b.prob_val.partial_cmp(&a.prob_val).unwrap_or(std::cmp::Ordering::Equal));
-
-            let tags: Vec<&str> = triples.iter().map(|t| t.tag).collect();
-            let lemmas_sorted: Vec<&str> = triples.iter().map(|t| t.lemma).collect();
-            let probs: Vec<&str> = triples.iter().map(|t| t.prob_str).collect();
-
-            // my $xpos = join("|", @tags);
-            let xpos = tags.join("|");
-            
-            // Deduplicate lemmas if all are the same
-            let unique_lemmas: Vec<&str> = lemmas_sorted.iter()
-                .copied()
-                .collect::<std::collections::HashSet<_>>()
-                .into_iter()
-                .collect();
-            
-            let lemma_str = if unique_lemmas.len() == 1 {
-                unique_lemmas[0].to_string()
+            if triples.is_empty() {
+                // Fallback to just printing the line as-is
+                writeln!(writer, "{}", line)?;
             } else {
-                lemmas_sorted.join("|")
-            };
-            
-            // my $misc = (scalar(@tags) == 1) ? "_" : join("|", @probs);
-            let misc = if tags.len() == 1 {
-                "_".to_string()
-            } else {
-                probs.join("|")
-            };
+                // Sort descending by prob_val
+                triples.sort_by(|a, b| b.prob_val.partial_cmp(&a.prob_val).unwrap_or(std::cmp::Ordering::Equal));
 
-            // print "$id\t$cols[0]\t$cols[2]\t_\t$xpos\t_\t_\t_\t_\t$misc"
-            writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t{}", id, cols[0], lemma_str, xpos, misc)?;
+                let tags: Vec<String> = triples.iter().map(|t| t.tag.clone()).collect();
+                let lemmas_sorted: Vec<String> = triples.iter().map(|t| t.lemma.clone()).collect();
+                let probs: Vec<String> = triples.iter().map(|t| t.prob_str.clone()).collect();
 
+                // Join tags with |
+                let xpos = tags.join("|");
+                
+                // Deduplicate lemmas if all are the same
+                let unique_lemmas: std::collections::HashSet<String> = lemmas_sorted.iter().cloned().collect();
+                
+                let lemma_str = if unique_lemmas.len() == 1 {
+                    lemmas_sorted[0].clone()
+                } else {
+                    lemmas_sorted.join("|")
+                };
+                
+                // If only one tag, use "_" for misc, otherwise join probabilities
+                let misc = if tags.len() == 1 {
+                    "_".to_string()
+                } else {
+                    probs.join("|")
+                };
+
+                // Output: id \t word \t lemma \t _ \t xpos \t _ \t _ \t _ \t _ \t misc
+                writeln!(writer, "{}\t{}\t{}\t_\t{}\t_\t_\t_\t_\t{}", id, cols[0], lemma_str, xpos, misc)?;
+            }
         } else {
             writeln!(writer, "{}", line)?;
         }

@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 3.2.5-5
 
+### Fixed
+
+- Use proper -prob flag for making tree-tagger output different interpretations with probabilities
+
 ### Added
+- **threshold option**: Added `-t` option to set probability threshold (default: 0.1)
 - **Probability-based Sorting**: Annotations now sorted in descending order by probability value
 - **Smart Lemma Handling**: 
   - Lemmas are paired with their corresponding POS tags and sorted together

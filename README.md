@@ -50,10 +50,10 @@ $ docker run --rm -i korap/conllu-treetagger < goe.conllu | head -8
 3	Frankreich	Frankreich	_	NE	_	_	_	_	_
 ```
 
-To output different pos/lemma interpretations with their probabilities, use the `-p` option:
+To output different pos/lemma interpretations with their probabilities, use the `-p` option. You can optionally specify a threshold with `-t` (default: 0.1):
 
 ``` shell
-$ docker run --rm -i korap/conllu-treetagger -p < goe.conllu | head -8
+$ docker run --rm -i korap/conllu-treetagger -p -t 0.01 < goe.conllu | head -8
 
 # foundry = tree_tagger
 # filename = GOE/AGA/00000/base/tokens.xml
