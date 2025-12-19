@@ -17,45 +17,36 @@ enum Commands {
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    let stdin = io::stdin();
+    let stdout = io::stdout();
+    let input = stdin.lock();
+    let mut output = io::BufWriter::new(stdout.lock());
 
     match cli.command {
-        Commands::Preprocess => preprocess(),
-        Commands::Postprocess => postprocess(),
-        Commands::FilterGerman => filter_german(),
+        Commands::Preprocess => preprocess(input, &mut output),
+        Commands::Postprocess => postprocess(input, &mut output),
+        Commands::FilterGerman => filter_german(input, &mut output),
     }
 }
 
-fn preprocess() -> anyhow::Result<()> {
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    let mut handle = stdin.lock();
-    let mut writer = io::BufWriter::new(stdout.lock());
-    let mut buffer = String::new();
+fn preprocess(mut input: impl BufRead, writer: &mut impl Write) -> anyhow::Result<()> {
+    let mut buffer = Vec::new();
 
-    while handle.read_line(&mut buffer)? > 0 {
-        let mut line = buffer.as_str();
+    while input.read_until(b'\n', &mut buffer)? > 0 {
+        let line_cow = String::from_utf8_lossy(&buffer);
+        let mut line_string = line_cow.into_owned();
+        
+        // Replace replacement character with ? to avoid tree-tagger segfaults
+        if line_string.contains('\u{FFFD}') {
+            line_string = line_string.replace('\u{FFFD}', "?");
+        }
+
+        let mut line = line_string.as_str();
         
         // $_=substr($_, 0, 99000);
         if line.len() > 99000 {
             line = &line[..99000];
         }
-        
-        let _trimmed = line.trim_end(); // Handle potential newline issues if we sliced it off? 
-        // Actually perl substr keeps the newline if it's within the limit, or cuts it off.
-        // But the regexes work on the string.
-        
-        // s/^(#.*|$)/<$1>/
-        // Note: $ matches end of string (newline in Perl usually, but here we have line content)
-        // If line is empty (just newline), it matches ^$
-        
-        // We need to be careful with newlines. `read_line` includes the newline.
-        // Perl `perl -wlnpe` : -l handles line endings automatically (chomps input, adds to output).
-        // Wait, `perl -wlnpe`
-        // -n: loop around input
-        // -p: print $_ at end of loop
-        // -l: chomp input, append $\ (newline) to output.
-        
-        // So $_ does NOT have newline when processing.
         
         let mut content = line.trim_end().to_string();
         
@@ -89,17 +80,16 @@ fn preprocess() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn postprocess() -> anyhow::Result<()> {
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    let mut handle = stdin.lock();
-    let mut writer = io::BufWriter::new(stdout.lock());
-    let mut buffer = String::new();
+fn postprocess(mut input: impl BufRead, writer: &mut impl Write) -> anyhow::Result<()> {
+    let mut buffer = Vec::new();
     
     let mut id = 0;
 
-    while handle.read_line(&mut buffer)? > 0 {
-        let mut line = buffer.trim_end().to_string();
+    while input.read_until(b'\n', &mut buffer)? > 0 {
+        let line_cow = String::from_utf8_lossy(&buffer);
+        // We also sanitize postprocess input just in case, though it should come from tree-tagger
+        let line_string = line_cow.replace('\u{FFFD}', "?");
+        let mut line = line_string.trim_end().to_string();
         
         // s/^<(.*)>$/$1/
         if line.starts_with('<') && line.ends_with('>') {
@@ -240,12 +230,8 @@ fn parse_line(line: &str) -> Line {
     }
 }
 
-fn filter_german() -> anyhow::Result<()> {
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    let mut handle = stdin.lock();
-    let mut writer = io::BufWriter::new(stdout.lock());
-    let mut buffer = String::new();
+fn filter_german(mut input: impl BufRead, writer: &mut impl Write) -> anyhow::Result<()> {
+    let mut buffer = Vec::new();
 
     let mut current_line: Option<Line> = None;
     let mut flag = false;
@@ -260,14 +246,16 @@ fn filter_german() -> anyhow::Result<()> {
     let re_vvam_fin = regex::Regex::new(r"^V[VAM]FIN$").unwrap();
 
     // Read first line to populate current_line
-    if handle.read_line(&mut buffer)? > 0 {
-        let line = buffer.trim_end();
+    if input.read_until(b'\n', &mut buffer)? > 0 {
+        let line_cow = String::from_utf8_lossy(&buffer);
+        let line = line_cow.trim_end();
         current_line = Some(parse_line(line));
         buffer.clear();
     }
 
-    while handle.read_line(&mut buffer)? > 0 {
-        let line = buffer.trim_end();
+    while input.read_until(b'\n', &mut buffer)? > 0 {
+        let line_cow = String::from_utf8_lossy(&buffer);
+        let line = line_cow.trim_end();
         let next_line = parse_line(line);
 
         if let Some(curr) = current_line {
@@ -341,4 +329,32 @@ fn filter_german() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_preprocess_invalid_utf8() {
+        let input = b"invalid \xFF utf8\n";
+        let mut output = Vec::new();
+
+        preprocess(&input[..], &mut output).unwrap();
+
+        let output_str = String::from_utf8(output).unwrap();
+        // invalid \xFF utf8 -> invalid ? utf8
+        assert!(output_str.contains("invalid ? utf8"));
+    }
+
+    #[test]
+    fn test_postprocess_invalid_utf8() {
+         let input = b"invalid \xFF utf8\n";
+         let mut output = Vec::new();
+
+         postprocess(&input[..], &mut output).unwrap();
+
+         let output_str = String::from_utf8(output).unwrap();
+         assert!(output_str.contains("invalid ? utf8"));
+    }
 }
