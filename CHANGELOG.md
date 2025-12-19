@@ -5,10 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.2.5-6] - 2025-12-19
 
 ### Fixed
-- Gracefully handle invalid UTF-8 input in `korap-treetagger-processor` by replacing invalid bytes with the replacement character instead of crashing (Fixes #1)
+- Gracefully handle invalid UTF-8 input in `korap-treetagger-processor` by replacing invalid bytes with `?` instead of crashing or using the replacement character (which caused segfaults in `tree-tagger`) (Fixes #1)
 - Added regression tests for invalid UTF-8 handling
 
 

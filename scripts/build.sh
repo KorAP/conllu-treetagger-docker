@@ -8,7 +8,7 @@ else
 	echo "Wrong number of arguments!"
 	exit 1
 fi
-LOCAL_VERSION=5
+LOCAL_VERSION=6
 
 docker build \
 --no-cache \
