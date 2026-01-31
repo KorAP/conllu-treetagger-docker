@@ -104,7 +104,9 @@ fn postprocess(mut input: impl BufRead, writer: &mut impl Write) -> anyhow::Resu
 
         // $id++; $id=0 if(/^(#|\s*$)/);
         id += 1;
-        if line.starts_with('#') || line.trim().is_empty() {
+        // Only reset id for actual comment lines (which start with "# ")
+        // Tokens starting with # (like hashtags) don't have a space after #
+        if line.starts_with("# ") || line.trim().is_empty() {
             id = 0;
         }
 
@@ -356,5 +358,60 @@ mod tests {
 
          let output_str = String::from_utf8(output).unwrap();
          assert!(output_str.contains("invalid ? utf8"));
+    }
+
+    /// Regression test for GitHub issue #2: hashtags incorrectly always get index 0
+    /// https://github.com/KorAP/conllu-treetagger-docker/issues/2
+    /// 
+    /// The bug was that tokens starting with # (like #MeToo) were incorrectly
+    /// identified as comment lines, causing their index to reset to 0.
+    #[test]
+    fn test_postprocess_hashtag_index() {
+        // Simulated tree-tagger output for tokens including hashtags
+        // Format: word\tTAG\tlemma
+        let input = b"#MeToo\tNN\t<unknown>\ntest\tVVFIN\ttesten\nfoo\tNN\tfoo\nbar\tNN\tbar\n#MeToo\tNN\t<unknown>\nend\tNN\tend\n";
+        let mut output = Vec::new();
+
+        postprocess(&input[..], &mut output).unwrap();
+
+        let output_str = String::from_utf8(output).unwrap();
+        let lines: Vec<&str> = output_str.lines().collect();
+
+        // #MeToo at position 1 should get index 1, not 0
+        assert!(lines[0].starts_with("1\t#MeToo\t"), "First #MeToo should have index 1, got: {}", lines[0]);
+        
+        // test at position 2 should get index 2
+        assert!(lines[1].starts_with("2\ttest\t"), "test should have index 2, got: {}", lines[1]);
+        
+        // foo at position 3 should get index 3
+        assert!(lines[2].starts_with("3\tfoo\t"), "foo should have index 3, got: {}", lines[2]);
+        
+        // bar at position 4 should get index 4
+        assert!(lines[3].starts_with("4\tbar\t"), "bar should have index 4, got: {}", lines[3]);
+        
+        // Second #MeToo at position 5 should get index 5, not 0
+        assert!(lines[4].starts_with("5\t#MeToo\t"), "Second #MeToo should have index 5, got: {}", lines[4]);
+        
+        // end at position 6 should get index 6
+        assert!(lines[5].starts_with("6\tend\t"), "end should have index 6, got: {}", lines[5]);
+    }
+
+    /// Test that actual comment lines still reset the index correctly
+    #[test]
+    fn test_postprocess_comment_line_resets_index() {
+        // Comment line (wrapped) followed by tokens
+        let input = b"<# This is a comment>\nword\tNN\tword\n";
+        let mut output = Vec::new();
+
+        postprocess(&input[..], &mut output).unwrap();
+
+        let output_str = String::from_utf8(output).unwrap();
+        let lines: Vec<&str> = output_str.lines().collect();
+
+        // Comment line should have index 0
+        assert!(lines[0].starts_with("# This is a comment"), "Comment line not preserved correctly: {}", lines[0]);
+        
+        // Word after comment should have index 1
+        assert!(lines[1].starts_with("1\tword\t"), "Word after comment should have index 1, got: {}", lines[1]);
     }
 }
